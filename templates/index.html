@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gourmet Cupcakes | Loja Oficial</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <header>
+        <h1>🧁 Sweet Cupcake Gourmet</h1>
+        <button class="cart-icon-btn" onclick="document.getElementById('checkout-panel').scrollIntoView({behavior: 'smooth'});">
+            🛒 Itens: <span id="cart-counter">0</span>
+        </button>
+    </header>
+
+    <div class="container">
+        <!-- Vitrine de Produtos -->
+        <main>
+            <h2 style="margin-bottom: 1.5rem;">Cardápio Artesanal</h2>
+            <div class="vitrine-grid">
+                {% for item in cupcakes %}
+                <div class="card">
+                    <img src="{{ item.imagem_url }}" alt="{{ item.nome }}">
+                    <div class="card-body">
+                        <h3 class="card-title">{{ item.nome }}</h3>
+                        <p class="card-desc">{{ item.descricao }}</p>
+                        <div class="card-footer">
+                            <span class="preco">R$ {{ "%.2f"|format(item.preco) }}</span>
+                                <button class="btn-add" 
+                                    data-id="{{ item.id }}" 
+                                    data-nome="{{ item.nome }}" 
+                                    data-preco="{{ item.preco }}" 
+                                    onclick="clicarAdicionar(this)">
+                                    + Adicionar
+                                </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </main>
+
+        <!-- Carrinho e Checkout -->
+        <aside class="checkout-panel" id="checkout-panel">
+            <h2>Finalizar Pedido</h2>
+            <div id="cart-items-container">
+                <p style="color: #888; font-style: italic;">Seu carrinho está vazio.</p>
+            </div>
+            
+            <div style="margin: 1.2rem 0; font-size: 1.2rem; font-weight: bold; display: flex; justify-content: space-between;">
+                <span>Total:</span>
+                <span id="cart-total">R$ 0,00</span>
+            </div>
+
+            <form id="form-checkout" onsubmit="realizarPedido(event)">
+                <div class="form-group">
+                    <label>Nome Completo:</label>
+                    <input type="text" id="cli_nome" required placeholder="Ex: Arthur Abreu">
+                </div>
+                <div class="form-group">
+                    <label>E-mail:</label>
+                    <input type="email" id="cli_email" required placeholder="arthur@email.com">
+                </div>
+                <div class="form-group">
+                    <label>Telefone / WhatsApp:</label>
+                    <input type="text" id="cli_telefone" required placeholder="(61) 99999-9999">
+                </div>
+                <div class="form-group">
+                    <label>Endereço de Entrega:</label>
+                    <textarea id="cli_endereco" rows="2" required placeholder="Rua, Número, Bairro"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Forma de Pagamento:</label>
+                    <select id="cli_pagamento" required>
+                        <option value="PIX">PIX</option>
+                        <option value="CARTAO">Cartão de Crédito</option>
+                        <option value="BOLETO">Boleto Bancário</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-checkout">Confirmar e Enviar Pedido</button>
+            </form>
+        </aside>
+    </div>
+
+    <script>
+        let carrinho = [];
+
+        function adicionarAoCarrinho(id, nome, preco) {
+            const itemExistente = carrinho.find(i => i.id === id);
+            if (itemExistente) {
+                itemExistente.quantidade += 1;
+            } else {
+                carrinho.push({ id, nome, preco, quantidade: 1 });
+            }
+            renderizarCarrinho();
+        }
+
+        function renderizarCarrinho() {
+            const container = document.getElementById("cart-items-container");
+            const contador = document.getElementById("cart-counter");
+            const totalEl = document.getElementById("cart-total");
+
+            if (carrinho.length === 0) {
+                container.innerHTML = `<p style="color: #888; font-style: italic;">Seu carrinho está vazio.</p>`;
+                contador.innerText = "0";
+                totalEl.innerText = "R$ 0,00";
+                return;
+            }
+
+            let total = 0;
+            let totalQtd = 0;
+            container.innerHTML = "";
+
+            carrinho.forEach(item => {
+                total += item.preco * item.quantidade;
+                totalQtd += item.quantidade;
+                container.innerHTML += `
+                    <div class="cart-item">
+                        <span>${item.nome} (x${item.quantidade})</span>
+                        <strong>R$ ${(item.preco * item.quantidade).toFixed(2)}</strong>
+                    </div>
+                `;
+            });
+
+            contador.innerText = totalQtd;
+            totalEl.innerText = `R$ ${total.toFixed(2)}`;
+        }
+
+        async function realizarPedido(event) {
+            event.preventDefault();
+            if (carrinho.length === 0) {
+                alert("Adicione pelo menos um cupcake ao seu carrinho antes de finalizar.");
+                return;
+            }
+
+            const payload = {
+                nome: document.getElementById("cli_nome").value,
+                email: document.getElementById("cli_email").value,
+                telefone: document.getElementById("cli_telefone").value,
+                endereco: document.getElementById("cli_endereco").value,
+                forma_pagamento: document.getElementById("cli_pagamento").value,
+                itens: carrinho
+            };
+
+            try {
+                const response = await fetch("/api/checkout", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                if (response.ok && data.sucesso) {
+                    window.location.href = `/confirmacao/${data.pedido_id}`;
+                } else {
+                    alert("Erro ao realizar pedido: " + data.mensagem);
+                }
+            } catch (err) {
+                alert("Falha na comunicação com o servidor.");
+            }
+        }
+        function clicarAdicionar(botao) {
+            const id = parseInt(botao.getAttribute("data-id"));
+            const nome = botao.getAttribute("data-nome");
+            const preco = parseFloat(botao.getAttribute("data-preco"));
+            adicionarAoCarrinho(id, nome, preco);
+        }
+    </script>
+</body>
+</html>

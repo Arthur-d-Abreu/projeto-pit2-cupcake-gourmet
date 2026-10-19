@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pedido Confirmado! | Sweet Cupcake</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .box-sucesso {
+            max-width: 600px;
+            margin: 4rem auto;
+            background: white;
+            padding: 3rem;
+            text-align: center;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        .icon-check {
+            font-size: 3.5rem;
+            color: #28a745;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🧁 Sweet Cupcake Gourmet</h1>
+    </header>
+
+    <div class="box-sucesso">
+        <div class="icon-check">✓</div>
+        <h2>Pedido Recebido com Sucesso!</h2>
+        <p style="margin: 1.5rem 0; font-size: 1.1rem; color: #555;">
+            O seu pedido <strong>#{{ pedido_id }}</strong> foi registado e já está a ser preparado pela nossa confeitaria.
+        </p>
+        <p style="color: #777; font-size: 0.95rem; margin-bottom: 2rem;">
+            Os detalhes da entrega foram registados e associados à sua conta.
+        </p>
+        <a href="/" style="background: var(--primary); color: white; padding: 0.8rem 1.5rem; text-decoration: none; border-radius: 8px; font-weight: bold;">
+            Voltar à Página Inicial
+        </a>
+    </div>
+</body>
+</html>
