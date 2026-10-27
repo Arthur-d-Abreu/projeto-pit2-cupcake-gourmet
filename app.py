@@ -1,4 +1,6 @@
 import pyodbc
+import uuid
+import os
 from flask import Flask, render_template, request, jsonify
 
 app = Flask(__name__)
@@ -124,6 +126,8 @@ def checkout():
         return jsonify({
             "sucesso": True,
             "pedido_id": pedido_id,
+            "nome_cliente": nome,
+            "forma_pagamento": forma_pagamento,
             "total": f"R$ {total:.2f}"
         }), 201
 
@@ -132,9 +136,37 @@ def checkout():
     except Exception as e:
         return jsonify({"sucesso": False, "mensagem": "Erro interno ao processar a encomenda."}), 500
 
-@app.route("/confirmacao/<int:pedido_id>")
-def confirmacao(pedido_id):
-    return render_template("pedido_sucesso.html", pedido_id=pedido_id)
+@app.route("/confirmacao")
+def confirmacao():
+    nome_cliente = request.args.get("nome", "Cliente")
+    forma_pagamento = request.args.get("pagamento", "PIX").upper()
+    
+    dados_mock = {
+        "metodo": forma_pagamento,
+        "detalhes": {}
+    }
+    
+    if "PIX" in forma_pagamento:
+        codigo_pix = f"00020126580014br.gov.bcb.pix0136{uuid.uuid4()}5204000053039865802BR5913SWEET CUPCAKE6008BRASILIA62070503***6304"
+        dados_mock["detalhes"] = {
+            "qr_code_url": "https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=PagamentoSimuladoSweetCupcake",
+            "copia_cola": codigo_pix
+        }
+    elif "BOLETO" in forma_pagamento:
+        linha_digitavel = f"34191.79001 01043.510047 {uuid.uuid4().hex[:10].upper()} 1 99990000000000"
+        dados_mock["detalhes"] = {
+            "linha_digitavel": linha_digitavel,
+            "vencimento": "Em até 3 dias úteis"
+        }
+    else:  # Cartão de Crédito
+        dados_mock["detalhes"] = {
+            "status_transacao": "Autorizada com Sucesso",
+            "bandeira": "Mastercard / Visa (Simulação)",
+            "codigo_autorizacao": f"AUTH-{uuid.uuid4().hex[:6].upper()}"
+        }
+        
+    return render_template("pedido_sucesso.html", nome_cliente=nome_cliente, mock=dados_mock)
+
 
 if __name__ == "__main__":
     print("Aceda em: http://127.0.0.1:5000")

@@ -49,3 +49,27 @@ def test_bloqueio_campos_obrigatorios_vazios(client):
     assert resposta.status_code == 400
     dados = resposta.get_json()
     assert dados["sucesso"] is False
+
+def test_retorno_checkout_com_mock_e_cliente(client):
+    """Garante que a API de checkout retorna nome_cliente e forma_pagamento para o Mock."""
+    payload = {
+        "nome": "Arthur Teste",
+        "email": "arthur@exemplo.com",
+        "telefone": "61999999999",
+        "endereco": "Rua Teste, 100",
+        "forma_pagamento": "PIX",
+        "itens": [{"id": 1, "quantidade": 1}]
+    }
+    resposta = client.post('/api/checkout', json=payload)
+    assert resposta.status_code == 201
+    dados = resposta.get_json()
+    assert dados["sucesso"] is True
+    assert dados["nome_cliente"] == "Arthur Teste"
+    assert dados["forma_pagamento"] == "PIX"
+
+def test_rota_confirmacao_com_mock_pix(client):
+    """Valida se confirmacao renderiza o nome do cliente e os dados do Mock PIX."""
+    resposta = client.get('/confirmacao?nome=Arthur%20Teste&pagamento=PIX')
+    assert resposta.status_code == 200
+    assert b"Arthur Teste" in resposta.data
+    assert b"Gateway Simulado (Mock)" in resposta.data

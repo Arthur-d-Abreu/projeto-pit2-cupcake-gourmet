@@ -7,19 +7,48 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
         .box-sucesso {
-            max-width: 600px;
-            margin: 4rem auto;
+            max-width: 620px;
+            margin: 3rem auto;
             background: white;
-            padding: 3rem;
+            padding: 2.5rem;
             text-align: center;
             border-radius: 12px;
             border: 1px solid var(--border);
             box-shadow: 0 4px 12px rgba(0,0,0,0.08);
         }
         .icon-check {
-            font-size: 3.5rem;
+            font-size: 3rem;
             color: #28a745;
-            margin-bottom: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        .mock-pagamento {
+            background: #f8f9fa;
+            border: 1px dashed #ced4da;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            text-align: left;
+        }
+        .badge-simulado {
+            display: inline-block;
+            background: #ffc107;
+            color: #333;
+            font-size: 0.75rem;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+        .input-copia {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            background: #fff;
+            box-sizing: border-box;
+            color: #555;
         }
     </style>
 </head>
@@ -31,13 +60,45 @@
     <div class="box-sucesso">
         <div class="icon-check">✓</div>
         <h2>Pedido Recebido com Sucesso!</h2>
-        <p style="margin: 1.5rem 0; font-size: 1.1rem; color: #555;">
-            O seu pedido <strong>#{{ pedido_id }}</strong> foi registado e já está a ser preparado pela nossa confeitaria.
+        <p style="margin: 1rem 0; font-size: 1.15rem; color: #333;">
+            Obrigado pela preferência, <strong>{{ nome_cliente }}</strong>!
         </p>
-        <p style="color: #777; font-size: 0.95rem; margin-bottom: 2rem;">
-            Os detalhes da entrega foram registados e associados à sua conta.
+
+        <!-- ÁREA DO GATEWAY MOCK -->
+        <div class="mock-pagamento">
+            <span class="badge-simulado">Gateway Simulado (Mock)</span>
+            <h4 style="margin: 0.3rem 0 1rem 0;">Detalhes do Pagamento: {{ mock.metodo }}</h4>
+
+            {% if 'PIX' in mock.metodo %}
+                <div style="text-align: center; margin-bottom: 1rem;">
+                    <p style="font-size: 0.9rem; color: #555; margin-bottom: 0.5rem;">Aponte a câmara do seu banco para o QR Code abaixo:</p>
+                    <img src="{{ mock.detalhes.qr_code_url }}" alt="QR Code PIX Simulado" style="border: 1px solid #ddd; border-radius: 6px;">
+                </div>
+                <label style="font-size: 0.8rem; font-weight: bold; color: #555;">PIX Copia e Cola:</label>
+                <input type="text" class="input-copia" value="{{ mock.detalhes.copia_cola }}" readonly onclick="this.select();">
+
+            {% elif 'BOLETO' in mock.metodo %}
+                <p style="font-size: 0.9rem; color: #555;"><strong>Vencimento:</strong> {{ mock.detalhes.vencimento }}</p>
+                <label style="font-size: 0.8rem; font-weight: bold; color: #555;">Linha Digitável:</label>
+                <input type="text" class="input-copia" value="{{ mock.detalhes.linha_digitavel }}" readonly onclick="this.select();">
+                <div style="text-align: center; margin-top: 1rem;">
+                    <button type="button" style="background: #6c757d; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer;" onclick="alert('Visualização de boleto de teste aberta.');">Visualizar Boleto PDF (Demo)</button>
+                </div>
+
+            {% else %}
+                <div style="color: #28a745; font-weight: bold; margin-bottom: 0.5rem;">
+                    ✓ Transação Aprovada pela Operadora
+                </div>
+                <p style="font-size: 0.9rem; margin: 0.3rem 0; color: #555;"><strong>Rede:</strong> {{ mock.detalhes.bandeira }}</p>
+                <p style="font-size: 0.9rem; margin: 0.3rem 0; color: #555;"><strong>Autorização:</strong> <code>{{ mock.detalhes.codigo_autorizacao }}</code></p>
+            {% endif %}
+        </div>
+
+        <p style="color: #666; font-size: 0.95rem; margin-bottom: 2rem;">
+            O registo foi integrado na base de dados e a encomenda está a ser preparada.
         </p>
-        <a href="/" style="background: var(--primary); color: white; padding: 0.8rem 1.5rem; text-decoration: none; border-radius: 8px; font-weight: bold;">
+
+        <a href="/" style="background: var(--primary); color: white; padding: 0.8rem 1.6rem; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
             Voltar à Página Inicial
         </a>
     </div>

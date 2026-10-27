@@ -42,7 +42,6 @@
             </div>
         </main>
 
-        <!-- Carrinho e Checkout -->
         <aside class="checkout-panel" id="checkout-panel">
             <h2>Finalizar Pedido</h2>
             <div id="cart-items-container">
@@ -84,8 +83,15 @@
         </aside>
     </div>
 
-    <script>
+<script>
         let carrinho = [];
+
+        function clicarAdicionar(botao) {
+            const id = parseInt(botao.getAttribute("data-id"));
+            const nome = botao.getAttribute("data-nome");
+            const preco = parseFloat(botao.getAttribute("data-preco"));
+            adicionarAoCarrinho(id, nome, preco);
+        }
 
         function adicionarAoCarrinho(id, nome, preco) {
             const itemExistente = carrinho.find(i => i.id === id);
@@ -93,6 +99,19 @@
                 itemExistente.quantidade += 1;
             } else {
                 carrinho.push({ id, nome, preco, quantidade: 1 });
+            }
+            renderizarCarrinho();
+        }
+
+        // FUNÇÃO PARA REMOVER OU DIMINUIR A QUANTIDADE
+        function removerDoCarrinho(id) {
+            const index = carrinho.findIndex(i => i.id === id);
+            if (index !== -1) {
+                if (carrinho[index].quantidade > 1) {
+                    carrinho[index].quantidade -= 1; // Diminui 1 unidade
+                } else {
+                    carrinho.splice(index, 1); // Se só tiver 1, remove da lista
+                }
             }
             renderizarCarrinho();
         }
@@ -117,9 +136,15 @@
                 total += item.preco * item.quantidade;
                 totalQtd += item.quantidade;
                 container.innerHTML += `
-                    <div class="cart-item">
+                    <div class="cart-item" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px dotted #eee;">
                         <span>${item.nome} (x${item.quantidade})</span>
-                        <strong>R$ ${(item.preco * item.quantidade).toFixed(2)}</strong>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <strong>R$ ${(item.preco * item.quantidade).toFixed(2)}</strong>
+                            <button type="button" 
+                                    onclick="removerDoCarrinho(${item.id})" 
+                                    style="background: #e63946; color: white; border: none; border-radius: 4px; padding: 2px 7px; cursor: pointer; font-weight: bold; font-size: 0.8rem;" 
+                                    title="Remover 1 unidade">✕</button>
+                        </div>
                     </div>
                 `;
             });
@@ -135,12 +160,15 @@
                 return;
             }
 
+            const nomeCliente = document.getElementById("cli_nome").value.trim();
+            const formaPagamento = document.getElementById("cli_pagamento").value;
+
             const payload = {
-                nome: document.getElementById("cli_nome").value,
+                nome: nomeCliente,
                 email: document.getElementById("cli_email").value,
                 telefone: document.getElementById("cli_telefone").value,
                 endereco: document.getElementById("cli_endereco").value,
-                forma_pagamento: document.getElementById("cli_pagamento").value,
+                forma_pagamento: formaPagamento,
                 itens: carrinho
             };
 
@@ -153,19 +181,14 @@
 
                 const data = await response.json();
                 if (response.ok && data.sucesso) {
-                    window.location.href = `/confirmacao/${data.pedido_id}`;
+                    // Redireciona passando tanto o nome do cliente quanto a forma de pagamento para o Mock
+                    window.location.href = `/confirmacao?nome=${encodeURIComponent(data.nome_cliente)}&pagamento=${encodeURIComponent(data.forma_pagamento)}`;
                 } else {
-                    alert("Erro ao realizar pedido: " + data.mensagem);
+                    alert("Erro ao realizar pedido: " + (data.mensagem || "Verifique os dados."));
                 }
             } catch (err) {
                 alert("Falha na comunicação com o servidor.");
             }
-        }
-        function clicarAdicionar(botao) {
-            const id = parseInt(botao.getAttribute("data-id"));
-            const nome = botao.getAttribute("data-nome");
-            const preco = parseFloat(botao.getAttribute("data-preco"));
-            adicionarAoCarrinho(id, nome, preco);
         }
     </script>
 </body>
